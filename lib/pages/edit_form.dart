@@ -3,14 +3,15 @@ import 'package:go_router/go_router.dart';
 import '../database/database_helper.dart';
 import '../models/contact.dart';
 
-class AddContactPage extends StatefulWidget {
-  const AddContactPage({super.key});
+class EditFormPage extends StatefulWidget {
+  final Contact contact;
+  const EditFormPage({super.key, required this.contact});
 
   @override
-  State<AddContactPage> createState() => _AddContactPageState();
+  State<EditFormPage> createState() => _EditFormPageState();
 }
 
-class _AddContactPageState extends State<AddContactPage> {
+class _EditFormPageState extends State<EditFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -20,25 +21,37 @@ class _AddContactPageState extends State<AddContactPage> {
   final DatabaseHelper _db = DatabaseHelper();
   
   bool _loading = false;
-  final Color primaryColor = Colors.blue.shade800;
+  final Color primaryColor = Colors.green.shade700;
   final Color backgroundColor = Colors.grey.shade50;
 
-  void _addContact() async {
+  @override
+  void initState() {
+    super.initState();
+    // Pré-remplir les champs avec les données du contact
+    _firstNameController.text = widget.contact.firstName;
+    _lastNameController.text = widget.contact.lastName;
+    _emailController.text = widget.contact.email;
+    _phoneController.text = widget.contact.phone;
+    _companyController.text = widget.contact.company;
+  }
+
+  void _updateContact() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
     try {
-      final newContact = Contact(
+      final updatedContact = Contact(
+        id: widget.contact.id,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         company: _companyController.text.trim(),
-        createdAt: DateTime.now(),
+        createdAt: widget.contact.createdAt,
       );
 
-      await _db.insertContact(newContact);
+      await _db.updateContact(updatedContact);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -46,7 +59,7 @@ class _AddContactPageState extends State<AddContactPage> {
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 8),
-              Text("Contact ajouté avec succès !"),
+              Text("Contact modifié avec succès !"),
             ],
           ),
           backgroundColor: Colors.green.shade600,
@@ -86,12 +99,12 @@ class _AddContactPageState extends State<AddContactPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header élégant avec dégradé
+            // Header élégant avec dégradé vert
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [primaryColor, Colors.blue.shade600],
+                  colors: [primaryColor, Colors.green.shade600],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -118,13 +131,13 @@ class _AddContactPageState extends State<AddContactPage> {
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
-                          onPressed: () => context.go('/home'),
+                          onPressed: () => context.go('/contacts'),
                           color: Colors.white,
                         ),
                       ),
                       const Spacer(),
                       Text(
-                        "Nouveau Contact",
+                        "Modifier Contact",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -160,7 +173,7 @@ class _AddContactPageState extends State<AddContactPage> {
                             ],
                           ),
                           child: Icon(
-                            Icons.person_add_alt_1_rounded,
+                            Icons.edit_note_rounded,
                             size: 28,
                             color: primaryColor,
                           ),
@@ -171,7 +184,7 @@ class _AddContactPageState extends State<AddContactPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Ajouter un contact",
+                                "Modifier le contact",
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
@@ -180,7 +193,7 @@ class _AddContactPageState extends State<AddContactPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                "Remplissez les informations du contact",
+                                "Mettez à jour les informations",
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.white70,
@@ -328,7 +341,7 @@ class _AddContactPageState extends State<AddContactPage> {
                                       ],
                                     ),
                                     child: ElevatedButton(
-                                      onPressed: () => context.go('/home'),
+                                      onPressed: () => context.go('/contacts'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.grey.shade800,
@@ -356,7 +369,7 @@ class _AddContactPageState extends State<AddContactPage> {
                                       gradient: LinearGradient(
                                         colors: [
                                           primaryColor,
-                                          Colors.blue.shade600,
+                                          Colors.green.shade600,
                                         ],
                                       ),
                                       boxShadow: [
@@ -368,7 +381,7 @@ class _AddContactPageState extends State<AddContactPage> {
                                       ],
                                     ),
                                     child: ElevatedButton(
-                                      onPressed: _loading ? null : _addContact,
+                                      onPressed: _loading ? null : _updateContact,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.transparent,
                                         foregroundColor: Colors.white,
@@ -389,10 +402,10 @@ class _AddContactPageState extends State<AddContactPage> {
                                           : const Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                Icon(Icons.add, size: 20),
+                                                Icon(Icons.save_rounded, size: 20),
                                                 SizedBox(width: 8),
                                                 Text(
-                                                  "Ajouter",
+                                                  "Enregistrer",
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w600,

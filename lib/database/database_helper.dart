@@ -37,24 +37,17 @@ class DatabaseHelper {
     ''');
   }
 
-  // Insérer un utilisateur
   Future<int> insertUser(User user) async {
     final db = await database;
     return await db.insert('users', user.toMap());
   }
 
-  // Vérifier si un email existe déjà
   Future<bool> emailExists(String email) async {
     final db = await database;
-    final result = await db.query(
-      'users',
-      where: 'email = ?',
-      whereArgs: [email],
-    );
+    final result = await db.query('users', where: 'email = ?', whereArgs: [email]);
     return result.isNotEmpty;
   }
 
-  // Vérifier les identifiants de connexion
   Future<User?> loginUser(String email, String password) async {
     final db = await database;
     final result = await db.query(
@@ -62,21 +55,21 @@ class DatabaseHelper {
       where: 'email = ? AND password = ?',
       whereArgs: [email, password],
     );
-
-    if (result.isNotEmpty) {
-      return User.fromMap(result.first);
-    }
+    if (result.isNotEmpty) return User.fromMap(result.first);
     return null;
   }
 
-  // Récupérer tous les utilisateurs (pour debug)
   Future<List<User>> getUsers() async {
     final db = await database;
     final result = await db.query('users');
     return result.map((map) => User.fromMap(map)).toList();
   }
 
-  // Fermer la base de données
+  Future<void> deleteUser(int id) async {
+    final db = await database;
+    await db.delete('users', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<void> close() async {
     final db = await database;
     await db.close();

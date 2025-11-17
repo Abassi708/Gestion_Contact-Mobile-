@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
-import 'pages/login_page.dart'; 
-
+import 'app_router.dart';
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Gestion Contacts',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        primarySwatch: Colors.indigo,
+        scaffoldBackgroundColor: Colors.grey[100],
+        useMaterial3: true,
       ),
-      home: LoginPage(), 
+      routerConfig: AppRouter.router,
     );
   }
 }
+
+
+
+
+
+

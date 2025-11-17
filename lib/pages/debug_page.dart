@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../database/database_helper.dart';
 import '../models/user.dart';
 
 class DebugPage extends StatefulWidget {
-  const DebugPage({Key? key}) : super(key: key);
+  const DebugPage({super.key});
 
   @override
   State<DebugPage> createState() => _DebugPageState();
 }
 
 class _DebugPageState extends State<DebugPage> {
-  final DatabaseHelper _databaseHelper = DatabaseHelper();
+  final DatabaseHelper _db = DatabaseHelper();
   List<User> _users = [];
 
   @override
@@ -20,177 +21,80 @@ class _DebugPageState extends State<DebugPage> {
   }
 
   void _loadUsers() async {
-    final users = await _databaseHelper.getUsers();
-    setState(() {
-      _users = users;
-    });
-  }
-
-  void _clearDatabase() async {
-    final db = await _databaseHelper.database;
-    await db.delete('users');
-    _loadUsers();
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Base de données effacée"),
-        backgroundColor: Colors.red,
-      ),
-    );
+    _users = await _db.getUsers();
+    setState(() {});
   }
 
   void _addTestUser() async {
-    final testUser = User(
+    await _db.insertUser(User(
       firstName: "Test",
       lastName: "User",
       email: "test@example.com",
       password: "123456",
       createdAt: DateTime.now(),
-    );
-    
-    await _databaseHelper.insertUser(testUser);
+    ));
     _loadUsers();
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Utilisateur test ajouté"),
-        backgroundColor: Colors.green,
-      ),
-    );
+  }
+
+  void _clearDatabase() async {
+    final db = await _db.database;
+    await db.delete('users');
+    _loadUsers();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Debug - Base de données'),
-        backgroundColor: Colors.orange,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-          ),
-        ],
+        title: const Text("Debug Base"),
+        backgroundColor: Colors.indigo,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
       ),
       body: Column(
         children: [
-          // Boutons d'action
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            color: Colors.grey[100],
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                ElevatedButton(onPressed: _addTestUser, child: const Text("Ajouter Test")),
                 ElevatedButton(
-                  onPressed: _addTestUser,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: const Text('Ajouter Test'),
-                ),
-                ElevatedButton(
-                  onPressed: _clearDatabase,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text('Tout Effacer'),
-                ),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: _clearDatabase,
+                    child: const Text("Tout Effacer")),
               ],
             ),
           ),
-          
-          // Statistiques
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatCard('Utilisateurs', _users.length.toString(), Colors.blue),
-                _buildStatCard('Base', 'SQLite', Colors.green),
-              ],
-            ),
-          ),
-          
-          // Liste des utilisateurs
           Expanded(
-            child: _users.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.people_outline, size: 60, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          "Aucun utilisateur",
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                      ],
+            child: ListView.builder(
+              itemCount: _users.length,
+              itemBuilder: (context, index) {
+                final user = _users[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  elevation: 3,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.indigo,
+                      child: Text(user.firstName[0], style: const TextStyle(color: Colors.white)),
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: _users.length,
-                    itemBuilder: (context, index) {
-                      final user = _users[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              user.firstName[0],
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          title: Text('${user.firstName} ${user.lastName}'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(user.email),
-                              Text(
-                                'Créé le: ${user.createdAt.day}/${user.createdAt.month}/${user.createdAt.year}',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          trailing: Text(
-                            'ID: ${user.id}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      );
-                    },
+                    title: Text("${user.firstName} ${user.lastName}"),
+                    subtitle: Text(user.email),
+                    trailing: Text("ID: ${user.id}"),
                   ),
+                );
+              },
+            ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Icon(Icons.arrow_back),
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, Color color) {
-    return Card(
-      color: color,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 }
+
+
+
+
